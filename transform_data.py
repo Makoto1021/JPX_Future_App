@@ -180,7 +180,7 @@ def get_wide(df):
     df_wide = df.set_index(['institutions', '限月','sell_buy'])['volume'].unstack('限月').unstack('sell_buy')
     list_gengetsu = df_wide.columns.get_level_values(0).unique().tolist()
     for g in list_gengetsu:
-        df_wide[g, 'diff'] = df_wide[g, 'sell'] - df_wide[g, 'buy']
+        df_wide[g, 'diff'] =  df_wide[g, 'buy'] - df_wide[g, 'sell']
     df_wide["合計", 'buy'] = df_wide.iloc[:, df_wide.columns.get_level_values(1)=='buy'].sum(axis=1)
     df_wide["合計", 'sell'] = df_wide.iloc[:, df_wide.columns.get_level_values(1)=='sell'].sum(axis=1)
     df_wide["合計", 'diff'] = df_wide.iloc[:, df_wide.columns.get_level_values(1)=='diff'].sum(axis=1)

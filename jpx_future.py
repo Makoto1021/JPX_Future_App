@@ -422,6 +422,7 @@ def main():
 
     # TOPIX
     df_wholeday_topix_sum_full = complement_night(df_day=df_wholeday_topix_sum, df_night=df_night_topix_sum)
+    print("df_wholeday_topix_sum_full colnames", df_wholeday_topix_sum_full.columns)
 
     ## 6. 銘柄別で全限月の合計を出す
     text = "\n6. 銘柄別で全限月の合計を計算"
@@ -440,7 +441,7 @@ def main():
                                                                                 "volume":sum}).reset_index()
     df_large_pivoted = df_wholeday_large_total.pivot(index='institutions', columns='sell_buy', values='volume')
     df_large_pivoted = df_large_pivoted.reset_index().rename_axis(None, axis=1)
-    df_large_pivoted["diff"] = df_large_pivoted["sell"] - df_large_pivoted["buy"]
+    df_large_pivoted["diff"] = df_large_pivoted["buy"] - df_large_pivoted["sell"]
 
     # ミニ
     df_wholeday_mini_total = df_wholeday_mini_sum_full.groupby(["institutions_code", 
@@ -454,7 +455,7 @@ def main():
                                                                               "volume":sum}).reset_index()
     df_mini_pivoted = df_wholeday_mini_total.pivot(index='institutions', columns='sell_buy', values='volume')
     df_mini_pivoted = df_mini_pivoted.reset_index().rename_axis(None, axis=1)
-    df_mini_pivoted["diff"] = df_mini_pivoted["sell"] - df_mini_pivoted["buy"]       
+    df_mini_pivoted["diff"] = df_mini_pivoted["buy"] - df_mini_pivoted["sell"]       
 
     # TOPIX
     df_wholeday_topix_total = df_wholeday_topix_sum_full.groupby(["institutions_code", 
@@ -469,7 +470,8 @@ def main():
 
     df_topix_pivoted = df_wholeday_topix_total.pivot(index='institutions', columns='sell_buy', values='volume')
     df_topix_pivoted = df_topix_pivoted.reset_index().rename_axis(None, axis=1)
-    df_topix_pivoted["diff"] = df_topix_pivoted["sell"] - df_topix_pivoted["buy"]   
+    df_topix_pivoted["diff"] = df_topix_pivoted["buy"] - df_topix_pivoted["sell"]
+    print("df_topix_pivoted colnames", df_topix_pivoted.columns)
 
     ### 6-2. 銘柄別のデータフレームを横並びに統合する      
     df_total_final = pd.concat([dfi.set_index('institutions') for dfi in [df_large_pivoted, 
@@ -482,10 +484,10 @@ def main():
     ### 6-3. 225ラージ・ミニの合計とTOPIXも合わせた総合計を出す
     df_total_final["日経225合計", "buy"] = df_total_final["日経225ラージ", "buy"] + df_total_final["日経225ミニ", "buy"]
     df_total_final["日経225合計", "sell"] = df_total_final["日経225ラージ", "sell"] + df_total_final["日経225ミニ", "sell"]
-    df_total_final["日経225合計", "diff"] = df_total_final["日経225合計", "sell"] - df_total_final["日経225合計", "buy"]
+    df_total_final["日経225合計", "diff"] = df_total_final["日経225合計", "buy"] - df_total_final["日経225合計", "sell"]
     df_total_final["総合計", "buy"] = df_total_final["日経225合計", "buy"] + df_total_final["Topix", "buy"] * TOPIX_MULTI
     df_total_final["総合計", "sell"] = df_total_final["日経225合計", "sell"] + df_total_final["Topix", "sell"] * TOPIX_MULTI
-    df_total_final["総合計", "diff"] = df_total_final["総合計", "sell"] - df_total_final["総合計", "buy"] 
+    df_total_final["総合計", "diff"] = df_total_final["総合計", "buy"] - df_total_final["総合計", "sell"]
     df_total_final = df_total_final.rename(columns={'buy': "買い", 'sell': "売り", 'diff':"差引"})
     df_total_final = df_total_final.rename_axis(mapper=['取引参加者'], axis=0)
 
@@ -645,6 +647,7 @@ def main():
     filename = SAVED_DATA + "225ミニ限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
     df_wholeday_mini_wide.to_excel(filename)
 
+    print("df_wholeday_topix_wide colnames", df_wholeday_topix_wide.columns)
     filename = SAVED_DATA + "TOPIX限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
     df_wholeday_topix_wide.to_excel(filename)
 
