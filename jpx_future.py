@@ -12,6 +12,7 @@ from functools import partial, reduce
 from download_data import get_url, clean_dataframe, get_csv
 from transform_data import *
 import os
+import glob
 
 master = tk.Tk()
 master.geometry('600x800')
@@ -505,6 +506,8 @@ def main():
     df_final_with_group = df_final_with_group.set_index([('グループ','new')], append=True).rename_axis(['取引参加者','グループ'])
     row_total = df_final_with_group.sum()
     df_final_with_group.loc[("", "総合計"),:] = row_total
+    reordered_cols = ["売り", "買い", "差引"]
+    df_final_with_group = df_final_with_group.reindex(reordered_cols, axis=1, level=1)
 
     ### 6-4. グループ別のデータをつくる
     df_total_grouped = df_final_with_group.groupby(level=[1]).sum()
@@ -520,7 +523,9 @@ def main():
     row_kokunai = df_total_grouped[df_total_grouped.index.isin(["国内大手合計", "ネット証券他合計"], level='取引参加者')].sum()
     df_total_grouped.loc[("1+2", "欧米合計"),:] = row_obei
     df_total_grouped.loc[("3+4", "国内合計"),:] = row_kokunai
-    df_total_grouped = df_total_grouped.rename(columns={'buy': "買い", 'sell': "売り", 'diff':"差引"})
+    df_total_grouped = df_total_grouped.rename(columns={'sell': "売り", 'buy': "買い", 'diff':"差引"})
+    reordered_cols = ["売り", "買い", "差引"]
+    df_total_grouped = df_total_grouped.reindex(reordered_cols, axis=1, level=1)
 
     ## 7. ラージ、ミニ、TOPIXで限月別の横並びデータをつくる
     text = "\n7. ラージ、ミニ、TOPIXで限月別の横並びデータを作成します"
@@ -570,8 +575,13 @@ def main():
     
 
     # 時系列データの読み込み
-    df_history = pd.read_excel(SAVED_DATA + "時系列データ.xlsx", header=[0, 1, 2])
-    # df_history = pd.read_excel("/Users/mmiyazaki/Documents/LANCERS/PyInstaller_test/完成データ/時系列データ.xlsx", header=[0, 1, 2])
+    # df_history = pd.read_excel(SAVED_DATA + "時系列データ.xlsx", header=[0, 1, 2])
+    # df_history = pd.read_excel(SAVED_DATA + "時系列データ.xlsx", header=[0, 1, 2])
+    matchedfiles = glob.glob(SAVED_DATA + '先物*.xlsx')
+    matchedfiles.sort()
+    latest_file = matchedfiles[-1] # 最も日付が新しいファイルを見つけて読み込み
+    df_history = pd.read_excel(latest_file, sheet_name="時系列", header=[0, 1, 2])
+    
 
     #　読み込んだ時系列データに新しいデータを追加
     df_history.loc[day.strftime("%Y-%m-%d"), :] = df_today.squeeze()
@@ -593,8 +603,11 @@ def main():
     df_today_group = df_today_group.unstack().swaplevel(0,1,axis=1).sort_index(axis=1)
     new_cols = ["売り＋買い", "前日比"]
     df_today_group = df_today_group.reindex(new_cols, axis=1, level=1)
+
     # 時系列データの読み込み
-    df_group_history = pd.read_excel(SAVED_DATA + "時系列グループ別合計データ.xlsx", header=[0, 1])
+    # df_group_history = pd.read_excel(SAVED_DATA + "時系列グループ別合計データ.xlsx", header=[0, 1])
+    df_group_history = pd.read_excel(latest_file, sheet_name="時系列グループ別合計", header=[0, 1])
+
     #　読み込んだ時系列データに新しい行を追加
     df_group_history.loc[day.strftime("%Y-%m-%d"), :] = df_today_group.squeeze()
     df_group_history = df_group_history.sort_index(axis = 0) 
@@ -632,15 +645,16 @@ def main():
     print(text)
     log(text)
 
+    """
     filename = SAVED_DATA + "時系列地域別合計データ.xlsx"
     df_region_total.to_excel(filename)
 
     filename = SAVED_DATA + "時系列グループ別合計データ.xlsx"
     df_group_history.to_excel(filename)
-
+    
     filename = SAVED_DATA + "時系列データ.xlsx"
     df_history.to_excel(filename)
-
+    
     filename = SAVED_DATA + "225ラージ限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
     df_wholeday_large_wide.to_excel(filename)
 
@@ -656,6 +670,19 @@ def main():
 
     filename = SAVED_DATA + "グループ別総合計" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
     df_total_grouped.to_excel(filename)
+    """
+
+    filename = SAVED_DATA + "先物" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
+    writer = pd.ExcelWriter(filename, engine='xlsxwriter')
+    df_wholeday_large_wide.to_excel(writer, sheet_name='225ラージ限月別内訳')
+    df_wholeday_mini_wide.to_excel(writer, sheet_name='225ミニ限月別内訳')
+    df_wholeday_topix_wide.to_excel(writer, sheet_name='TOPIX限月別内訳')
+    df_final_with_group.to_excel(writer, sheet_name='企業別総合計')
+    df_total_grouped.to_excel(writer, sheet_name='グループ別総合計')
+    df_history.to_excel(writer, sheet_name='時系列')
+    df_group_history.to_excel(writer, sheet_name='時系列グループ別合計')
+    df_region_total.to_excel(writer, sheet_name='時系列地域別合計')
+    writer.save()
 
     text = "Excelファイルの保存が完了しました"
     print(text)
