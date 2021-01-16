@@ -1,3 +1,5 @@
+# from tkinter import *
+import tkinter as tk
 import pandas as pd
 import numpy as np
 from datetime import datetime as dt
@@ -12,6 +14,29 @@ from transform_data import *
 import os
 import glob
 
+master = tk.Tk()
+master.geometry('600x800')
+tk.Label(master, text="何日前のデータを取得しますか？", anchor='w', width=30).grid(row=0)
+tk.Label(master, text="今日のデータなら０", anchor='w', width=30, font=("Helvetica 9 italic", 10)).grid(row=1)
+tk.Label(master, text="前日は１、二日前なら２…と入力してください", anchor='w', width=30, font=("Helvetica 9 italic", 10)).grid(row=2)
+
+
+tk.Label(master, text="TOPIX係数", anchor='w', width=30).grid(row=3)
+# tk.Label(master, text="ログ").grid(row=5)
+e1 = tk.Entry(master)
+e2 = tk.Entry(master)
+e1.insert(10, 0)
+e2.insert(10, 0.5)
+e1.grid(row=0, column=1)
+e2.grid(row=3, column=1)
+
+# ログ記録用の箱をつくる
+lower_frame = tk.Frame(master, bg='#80c1ff', bd='5')
+lower_frame.place(relx=0.5, rely=0.2, relwidth=0.75, relheight=0.6, anchor='n')
+log_box = tk.Text(lower_frame, state='disabled')
+log_box.place(relwidth=1, relheight=1)
+
+
 ## 1-2. パラメーターの設定
 # 元データをダウンロードするためのフォルダ
 
@@ -25,11 +50,20 @@ SAVED_DATA = os.path.join(dirname, '完成データ/')
 PATH_GROUP = os.path.join(dirname, '企業名グループ.xlsx')
 
 # TOPIXに掛ける係数（225合計と合わせて総合計を計算する際に使う）
-TOPIX_MULTI = 1.0
+TOPIX_MULTI = float(e2.get())
 
-def jpx_future():
 
-    days = 1
+def log(msg):
+    log_box.config(state='normal')
+    log_box.insert('end', msg+'\n')
+    log_box.see('end')
+    log_box.config(state='disabled')
+    log_box.update()
+
+
+def main():
+
+    days = int(e1.get())
     print("days", days)
     print("TOPIX_MULTI", TOPIX_MULTI)
 
@@ -39,6 +73,7 @@ def jpx_future():
             'institutions_buy', 'institutions_buy_eng', 'volume_buy']
 
     print("2. データのダウンロード")
+    log("2. データのダウンロード")
     
     ### 2-2. 日中立会取引データのダウンロード
     url_wholeday = get_url(datatype=3, day=day)
@@ -46,9 +81,11 @@ def jpx_future():
         # 休日などでファイルがない場合はエラーメッセージを返します
         text = "%s年%s月%s日の日中立会取引データが見つかりません"%(day.year, day.month, day.day)
         print(text)
+        log(text)
     elif url_wholeday == "No page":
         text = "メインページが見つかりません。https://www.jpx.co.jp/markets/derivatives/participant-volume/index.html　を確認してください"
         print(text)
+        log(text)
     elif requests.get(url_wholeday).ok:
         s=requests.get(url_wholeday).content
         df_wholeday = clean_dataframe(get_csv(s, colnames = colnames), day = day)
@@ -56,9 +93,11 @@ def jpx_future():
         df_wholeday.to_csv(filename)
         text = "%s年%s月%s日の日中立会取引データをダウンロードしました"%(day.year, day.month, day.day)
         print(text)
+        log(text)
     else:
         text = "何らかの理由でデータが見つかりません"
         print(text)
+        log(text)
     
     ### 2-3. 日中JNET取引データのダウンロード
     url_wholeday_JNET = get_url(datatype=4, day=day)
@@ -66,9 +105,11 @@ def jpx_future():
         # 休日などでファイルがない場合はエラーメッセージを返します
         text = "%s年%s月%s日の日中JNET取引データが見つかりません"%(day.year, day.month, day.day)
         print(text)
+        log(text)
     elif url_wholeday == "No page":
         text = "メインページが見つかりません。https://www.jpx.co.jp/markets/derivatives/participant-volume/index.html　を確認してください"
         print(text)
+        log(text)
     elif requests.get(url_wholeday_JNET).ok:
         s=requests.get(url_wholeday_JNET).content
         df_wholeday_JNET = clean_dataframe(get_csv(s, colnames = colnames), day = day)
@@ -76,9 +117,11 @@ def jpx_future():
         df_wholeday_JNET.to_csv(filename)
         text = "%s年%s月%s日の日中JNET取引データをダウンロードしました"%(day.year, day.month, day.day)
         print(text)
+        log(text)
     else:
         text = "何らかの理由でデータが見つかりません"
         print(text)
+        log(text)
     
     ### 2-4. ナイト立会取引データのダウンロード
     url_night = get_url(datatype=1, day=day)
@@ -86,9 +129,11 @@ def jpx_future():
         # 休日などでファイルがない場合はエラーメッセージを返します
         text = "%s年%s月%s日のナイト立会取引データが見つかりません"%(day.year, day.month, day.day)
         print(text)
+        log(text)
     elif url_wholeday == "No page":
         text = "メインページが見つかりません。https://www.jpx.co.jp/markets/derivatives/participant-volume/index.html　を確認してください"
         print(text)
+        log(text)
     elif requests.get(url_night).ok:
         s=requests.get(url_night).content
         df_night = clean_dataframe(get_csv(s, colnames = colnames), day = day)
@@ -96,9 +141,11 @@ def jpx_future():
         df_night.to_csv(filename)
         text = "%s年%s月%s日のナイト立会取引データをダウンロードしました"%(day.year, day.month, day.day)
         print(text)
+        log(text)
     else:
         text = "何らかの理由でデータが見つかりません"
         print(text)
+        log(text)
     
     ### 2-5. ナイトJNET取引データのダウンロード
     url_night_JNET = get_url(datatype=2, day=day)
@@ -106,9 +153,11 @@ def jpx_future():
         # 休日などでファイルがない場合はエラーメッセージを返します
         text = "%s年%s月%s日のナイトJNET取引データが見つかりません"%(day.year, day.month, day.day)
         print(text)
+        log(text)
     elif url_wholeday == "No page":
         text = "メインページが見つかりません。https://www.jpx.co.jp/markets/derivatives/participant-volume/index.html　を確認してください"
         print(text)
+        log(text)
     elif requests.get(url_night_JNET).ok:
         s=requests.get(url_night_JNET).content
         df_night_JNET = clean_dataframe(get_csv(s, colnames = colnames), day = day)
@@ -116,14 +165,17 @@ def jpx_future():
         df_night_JNET.to_csv(filename)
         text = "%s年%s月%s日のナイトJNET取引データをダウンロードしました"%(day.year, day.month, day.day)
         print(text)
+        log(text)
     else:
         text = "何らかの理由でデータが見つかりません"
         print(text)
+        log(text)
     
     
     ## 3. データの初期整理
     text = "\n3. データの初期整理"
     print(text)
+    log(text)
     ### 3-1. 先物/OP識別カラムを加える
     df_wholeday["先物/OP"] = np.nan
     df_wholeday["先物/OP"] = df_wholeday.JPX_code.apply(fut_or_op)
@@ -153,11 +205,13 @@ def jpx_future():
     ## 4. 立会とJNETを統合し、限月ごとに整理して並び替える
     text = "\n4. 立会とJNETを統合します"
     print(text)
+    log(text)
     ### 4-2. 日中の立会とJNETを統合する
 
     #　日中立会
     text = "4-2. 日中取引の統合…"
     print(text)
+    log(text)
     # 225ラージ
     df_wholeday_large = df_wholeday[(df_wholeday["銘柄"]=="日経225（ラージ）") & (df_wholeday["先物/OP"] == "先物")]
 
@@ -170,6 +224,7 @@ def jpx_future():
         
         text = f"日中225ラージの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
     
     #　JNET
     df_wholeday_JNET_large = df_wholeday_JNET[(df_wholeday_JNET["銘柄"]=="日経225（ラージ）") & (df_wholeday_JNET["先物/OP"] == "先物")]
@@ -183,6 +238,7 @@ def jpx_future():
         
         text = f"日中225ラージJNETの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
     
     df_wholeday_large_stacked = make_long_df(df_wholeday_large)
     df_wholeday_JNET_large_stacked = make_long_df(df_wholeday_JNET_large)
@@ -200,6 +256,7 @@ def jpx_future():
         
         text = f"日中225ミニの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
     
     # 225ミニJNET
     df_wholeday_JNET_mini = df_wholeday_JNET[(df_wholeday_JNET["銘柄"]=="日経225（ミニ）") & (df_wholeday_JNET["先物/OP"] == "先物")]
@@ -213,6 +270,7 @@ def jpx_future():
         
         text = f"日中225ミニJNETの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
 
     df_wholeday_mini_stacked = make_long_df(df_wholeday_mini)
     df_wholeday_JNET_mini_stacked = make_long_df(df_wholeday_JNET_mini)
@@ -230,6 +288,7 @@ def jpx_future():
         
         text = f"日中TOPIXの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
 
     df_wholeday_JNET_topix = df_wholeday_JNET[(df_wholeday_JNET["銘柄"]=="TOPIX") & (df_wholeday_JNET["先物/OP"] == "先物")]
 
@@ -242,6 +301,7 @@ def jpx_future():
         
         text = f"日中TOPIX、JNETの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
     
     df_wholeday_topix_stacked = make_long_df(df_wholeday_topix)
     df_wholeday_JNET_topix_stacked = make_long_df(df_wholeday_JNET_topix)
@@ -261,6 +321,7 @@ def jpx_future():
         
         text = f"ナイト日経225ラージの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
     
     #　ナイトJNET
     df_night_JNET_large = df_night_JNET[(df_night_JNET["銘柄"]=="日経225（ラージ）") & (df_night_JNET["先物/OP"] == "先物")]
@@ -274,6 +335,7 @@ def jpx_future():
         
         text = f"ナイト日経225ラージJNETの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
     
     df_night_large_stacked = make_long_df(df_night_large)
     df_night_JNET_large_stacked = make_long_df(df_night_JNET_large)
@@ -292,6 +354,7 @@ def jpx_future():
         
         text = f"ナイト日経225ミニの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
 
     #　ナイトJNET
     df_night_JNET_mini = df_night[(df_night["銘柄"]=="日経225（ミニ）") & (df_night["先物/OP"] == "先物")]
@@ -305,6 +368,7 @@ def jpx_future():
         
         text = f"ナイト日経225ミニJNETの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
 
     df_night_mini_stacked = make_long_df(df_night_mini)
     df_night_JNET_mini_stacked = make_long_df(df_night_JNET_mini)
@@ -323,6 +387,7 @@ def jpx_future():
         
         text = f"ナイトTOPIXの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
 
     #　ナイトJNET
     df_night_JNET_topix = df_night[(df_night["銘柄"]=="TOPIX") & (df_night["先物/OP"] == "先物")]
@@ -336,6 +401,7 @@ def jpx_future():
         
         text = f"ナイトTOPIXのJNETの第{g}限月のデータサイズは{shape}"
         print(text)
+        log(text)
     
     df_night_topix_stacked = make_long_df(df_night_topix)
     df_night_JNET_topix_stacked = make_long_df(df_night_JNET_topix)
@@ -344,6 +410,7 @@ def jpx_future():
     ## 5. 銘柄ごとに日中取引の情報をナイトから補う
     text = "\n5. 銘柄ごとに日中取引の情報をナイトから補います"
     print(text)
+    log(text)
 
     ### 5-2. 情報を補完する
     # 日経225ラージ
@@ -361,7 +428,7 @@ def jpx_future():
     ## 6. 銘柄別で全限月の合計を出す
     text = "\n6. 銘柄別で全限月の合計を計算"
     print(text)
-    
+    log(text)
     ### 6-1. 銘柄ごとに売り・買いを横並びにして差を計算する
     # ラージ
     df_wholeday_large_total = df_wholeday_large_sum_full.groupby(["institutions_code", 
@@ -432,6 +499,7 @@ def jpx_future():
     df_final_with_group = df_total_final.merge(groups, left_index = True, right_index = True, how='left')
     text = "6-3. 企業をグループ分けしました"
     print(text)
+    log(text)
 
     # リストにない企業はグループ４に振り分け
     df_final_with_group['グループ', 'new'] = df_final_with_group['グループ', 'new'].fillna(4).astype(int)
@@ -462,6 +530,7 @@ def jpx_future():
     ## 7. ラージ、ミニ、TOPIXで限月別の横並びデータをつくる
     text = "\n7. ラージ、ミニ、TOPIXで限月別の横並びデータを作成します"
     print(text)
+    log(text)
 
     ### 7-2. 横並びデータをつくる      
     # 225ラージ
@@ -471,6 +540,7 @@ def jpx_future():
     df_wholeday_large_wide.loc[("総合計"),:] = row_total
     text = "225ラージのデータが完成しました"
     print(text)
+    log(text)
 
     # 225ミニ
     df_wholeday_mini_wide = get_wide(df_wholeday_mini_sum_full)
@@ -479,6 +549,7 @@ def jpx_future():
     df_wholeday_mini_wide.loc[("総合計"),:] = row_total
     text = "225ミニのデータが完成しました"
     print(text)
+    log(text)
 
     # TOPIX
     df_wholeday_topix_wide = get_wide(df_wholeday_topix_sum_full)
@@ -487,10 +558,12 @@ def jpx_future():
     df_wholeday_topix_wide.loc[("総合計"),:] = row_total
     text = "TOPIXのデータが完成しました"
     print(text)
+    log(text)
 
     ## 8. 時系列データの作成
     text = "\n8. 時系列データを作成します"
     print(text)
+    log(text)
 
     ### 8-1. 銘柄別
     df_today = df_total_grouped.iloc[:4, (df_total_grouped.columns.get_level_values(0).isin(['Topix', '日経225合計', "総合計"])) ]
@@ -518,6 +591,7 @@ def jpx_future():
     df_history = df_history.sort_index(axis = 0)
     text = "銘柄別時系列データを作成しました"
     print(text)
+    log(text)
 
     ### 8-2. グループ別合計
     df_today_total_group = df_today.xs('総合計', axis=1, level=1, drop_level=False)
@@ -543,6 +617,7 @@ def jpx_future():
     df_group_history.update(res)
     text = "グループ別時系列データを作成しました"
     print(text)
+    log(text)
 
     ### 8-3. 欧米・国内合計
     df_region_total = df_group_history.copy(deep=True)
@@ -563,10 +638,12 @@ def jpx_future():
     df_region_total = df_region_total.reindex(new_cols, axis=1, level=0)
     text = "欧米・国内合計時系列データを作成しました"
     print(text)
+    log(text)
 
     ## 9. CSV/Excelファイルに保存
     text = "\n9. Excelファイルに保存します"
     print(text)
+    log(text)
 
     """
     filename = SAVED_DATA + "時系列地域別合計データ.xlsx"
@@ -609,6 +686,15 @@ def jpx_future():
 
     text = "Excelファイルの保存が完了しました"
     print(text)
+    log(text)
 
     text = "\n画面を閉じてください"
     print(text)
+    log(text)
+
+b = tk.Button(master, text="データを取得する", command=main).grid(row=4, 
+                                                               column=1, 
+                                                               sticky=tk.W, 
+                                                               pady=4)
+
+master.mainloop()
