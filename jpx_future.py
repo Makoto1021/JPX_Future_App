@@ -11,15 +11,23 @@ from download_data import get_url, clean_dataframe, get_csv
 from transform_data import *
 import os
 import glob
+import boto3
+from to_csv_on_s3 import to_csv_on_s3
 
 ## 1-2. パラメーターの設定
 # 元データをダウンロードするためのフォルダ
+# reading s3 bucket
+client = boto3.client('s3')
 
 dirname = os.getcwd()
-RAW_DATA = os.path.join(dirname, '元データ/')
+# FOLDER_RAW = os.path.join(dirname, '元データ/')
+BUCKET_NAME = 'jpx-future-bucket'
+FOLDER_RAW = "raw_data/"
 
 # 完成したデータを保存するためのフォルダ
-SAVED_DATA = os.path.join(dirname, '完成データ/')
+# FOLDER_FINAL = os.path.join(dirname, '完成データ/')
+# FOLDER_FINAL = 's3://jpx-future-bucket/完成データ/'
+FOLDER_FINAL = "final_data/"
 
 # 企業のグループ分けに使うExcelファイル
 PATH_GROUP = os.path.join(dirname, '企業名グループ.xlsx')
@@ -29,7 +37,7 @@ TOPIX_MULTI = 1.0
 
 def jpx_future():
 
-    days = 1
+    days = 0
     print("days", days)
     print("TOPIX_MULTI", TOPIX_MULTI)
 
@@ -52,8 +60,9 @@ def jpx_future():
     elif requests.get(url_wholeday).ok:
         s=requests.get(url_wholeday).content
         df_wholeday = clean_dataframe(get_csv(s, colnames = colnames), day = day)
-        filename = RAW_DATA + "日中立会取引" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
-        df_wholeday.to_csv(filename)
+        filename = FOLDER_RAW + "日中立会取引" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+        # df_wholeday.to_csv(filename)
+        to_csv_on_s3(df_wholeday, bucketName=BUCKET_NAME, fileName=filename)
         text = "%s年%s月%s日の日中立会取引データをダウンロードしました"%(day.year, day.month, day.day)
         print(text)
     else:
@@ -72,8 +81,9 @@ def jpx_future():
     elif requests.get(url_wholeday_JNET).ok:
         s=requests.get(url_wholeday_JNET).content
         df_wholeday_JNET = clean_dataframe(get_csv(s, colnames = colnames), day = day)
-        filename = RAW_DATA + "日中JNET取引" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
-        df_wholeday_JNET.to_csv(filename)
+        filename = FOLDER_RAW + "日中JNET取引" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+        # df_wholeday_JNET.to_csv(filename)
+        to_csv_on_s3(df_wholeday_JNET, bucketName=BUCKET_NAME, fileName=filename)
         text = "%s年%s月%s日の日中JNET取引データをダウンロードしました"%(day.year, day.month, day.day)
         print(text)
     else:
@@ -92,8 +102,9 @@ def jpx_future():
     elif requests.get(url_night).ok:
         s=requests.get(url_night).content
         df_night = clean_dataframe(get_csv(s, colnames = colnames), day = day)
-        filename = RAW_DATA + "ナイト立会取引" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
-        df_night.to_csv(filename)
+        filename = FOLDER_RAW + "ナイト立会取引" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+        # df_night.to_csv(filename)
+        to_csv_on_s3(df_night, bucketName=BUCKET_NAME, fileName=filename)
         text = "%s年%s月%s日のナイト立会取引データをダウンロードしました"%(day.year, day.month, day.day)
         print(text)
     else:
@@ -112,8 +123,9 @@ def jpx_future():
     elif requests.get(url_night_JNET).ok:
         s=requests.get(url_night_JNET).content
         df_night_JNET = clean_dataframe(get_csv(s, colnames = colnames), day = day)
-        filename = RAW_DATA + "ナイトJNET取引" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
-        df_night_JNET.to_csv(filename)
+        filename = FOLDER_RAW + "ナイトJNET取引" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+        # df_night_JNET.to_csv(filename)
+        to_csv_on_s3(df_night_JNET, bucketName=BUCKET_NAME, fileName=filename)
         text = "%s年%s月%s日のナイトJNET取引データをダウンロードしました"%(day.year, day.month, day.day)
         print(text)
     else:
@@ -502,12 +514,12 @@ def jpx_future():
     
 
     # 時系列データの読み込み
-    # df_history = pd.read_excel(SAVED_DATA + "時系列データ.xlsx", header=[0, 1, 2])
-    # df_history = pd.read_excel(SAVED_DATA + "時系列データ.xlsx", header=[0, 1, 2])
-    matchedfiles = glob.glob(SAVED_DATA + '先物*.xlsx')
-    matchedfiles.sort()
-    latest_file = matchedfiles[-1] # 最も日付が新しいファイルを見つけて読み込み
-    df_history = pd.read_excel(latest_file, sheet_name="時系列", header=[0, 1, 2])
+    # df_history = pd.read_excel(FOLDER_FINAL + "時系列データ.xlsx", header=[0, 1, 2])
+    df_history = pd.read_excel('s3://jpx-future-bucket/final_data/時系列データ.xlsx', header=[0, 1, 2])
+    #matchedfiles = glob.glob(FOLDER_FINAL + '先物*.csv')
+    #matchedfiles.sort()
+    #latest_file = matchedfiles[-1] # 最も日付が新しいファイルを見つけて読み込み
+    #df_history = pd.read_excel(latest_file, sheet_name="時系列", header=[0, 1, 2])
     
 
     #　読み込んだ時系列データに新しいデータを追加
@@ -531,7 +543,7 @@ def jpx_future():
     df_today_group = df_today_group.reindex(new_cols, axis=1, level=1)
 
     # 時系列データの読み込み
-    # df_group_history = pd.read_excel(SAVED_DATA + "時系列グループ別合計データ.xlsx", header=[0, 1])
+    # df_group_history = pd.read_excel(FOLDER_FINAL + "時系列グループ別合計データ.xlsx", header=[0, 1])
     df_group_history = pd.read_excel(latest_file, sheet_name="時系列グループ別合計", header=[0, 1])
 
     #　読み込んだ時系列データに新しい行を追加
@@ -568,34 +580,42 @@ def jpx_future():
     text = "\n9. Excelファイルに保存します"
     print(text)
 
-    """
-    filename = SAVED_DATA + "時系列地域別合計データ.xlsx"
-    df_region_total.to_excel(filename)
-
-    filename = SAVED_DATA + "時系列グループ別合計データ.xlsx"
-    df_group_history.to_excel(filename)
     
-    filename = SAVED_DATA + "時系列データ.xlsx"
-    df_history.to_excel(filename)
-    
-    filename = SAVED_DATA + "225ラージ限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
-    df_wholeday_large_wide.to_excel(filename)
+    filename = FOLDER_FINAL + "時系列地域別合計データ.csv"
+    df_region_total.to_csv(filename)
+    to_csv_on_s3(df_region_total, bucketName=BUCKET_NAME, fileName=filename)
 
-    filename = SAVED_DATA + "225ミニ限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
-    df_wholeday_mini_wide.to_excel(filename)
+    filename = FOLDER_FINAL + "時系列グループ別合計データ.csv"
+    df_group_history.to_csv(filename)
+    to_csv_on_s3(df_group_history, bucketName=BUCKET_NAME, fileName=filename)
+    
+    filename = FOLDER_FINAL + "時系列データ.csv"
+    df_history.to_csv(filename)
+    to_csv_on_s3(df_history, bucketName=BUCKET_NAME, fileName=filename)
+    
+    filename = FOLDER_FINAL + "225ラージ限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+    df_wholeday_large_wide.to_csv(filename)
+    to_csv_on_s3(df_wholeday_large_wide, bucketName=BUCKET_NAME, fileName=filename)
+
+    filename = FOLDER_FINAL + "225ミニ限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+    df_wholeday_mini_wide.to_csv(filename)
+    to_csv_on_s3(df_wholeday_mini_wide, bucketName=BUCKET_NAME, fileName=filename)
 
     print("df_wholeday_topix_wide colnames", df_wholeday_topix_wide.columns)
-    filename = SAVED_DATA + "TOPIX限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
-    df_wholeday_topix_wide.to_excel(filename)
+    filename = FOLDER_FINAL + "TOPIX限月別内訳" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+    df_wholeday_topix_wide.to_csv(filename)
+    to_csv_on_s3(df_wholeday_topix_wide, bucketName=BUCKET_NAME, fileName=filename)
 
-    filename = SAVED_DATA + "企業別総合計" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
-    df_final_with_group.to_excel(filename)
+    filename = FOLDER_FINAL + "企業別総合計" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+    df_final_with_group.to_csv(filename)
+    to_csv_on_s3(df_final_with_group, bucketName=BUCKET_NAME, fileName=filename)
 
-    filename = SAVED_DATA + "グループ別総合計" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
-    df_total_grouped.to_excel(filename)
+    filename = FOLDER_FINAL + "グループ別総合計" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+    df_total_grouped.to_csv(filename)
+    to_csv_on_s3(df_total_grouped, bucketName=BUCKET_NAME, fileName=filename)
+
     """
-
-    filename = SAVED_DATA + "先物" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
+    filename = FOLDER_FINAL + "先物" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".xlsx"
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
     df_wholeday_large_wide.to_excel(writer, sheet_name='225ラージ限月別内訳')
     df_wholeday_mini_wide.to_excel(writer, sheet_name='225ミニ限月別内訳')
@@ -606,6 +626,7 @@ def jpx_future():
     df_group_history.to_excel(writer, sheet_name='時系列グループ別合計')
     df_region_total.to_excel(writer, sheet_name='時系列地域別合計')
     writer.save()
+    """
 
     text = "Excelファイルの保存が完了しました"
     print(text)

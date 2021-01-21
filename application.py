@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 import plotly.figure_factory as ff
 import numpy as np
 import boto3
+from to_csv_on_s3 import to_csv_on_s3
 
 # reading s3 bucket
 client = boto3.client('s3')
@@ -28,6 +29,10 @@ filename = '完成データ/先物2021-1-15.xlsx'
 SAVED_DATA = os.path.join(dirname, filename)
 # df = pd.read_excel(SAVED_DATA, header=1)
 df = pd.read_excel(path, header=1)
+# temp
+# to_csv_on_s3(dataframe=df, path = 's3://jpx-future-bucket/元データ/', filename="test.csv")
+df.to_csv('s3://jpx-future-bucket/元データ/test.csv')
+# temp end
 
 df_new = df.drop(["差引", "差引.1", "差引.2"], axis=1)
 df_new = df_new[(df_new["売り買い"] != "総合計")&(df_new["売り買い"] != "取引参加者")]
