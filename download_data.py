@@ -7,6 +7,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from functools import partial, reduce
+from to_csv_on_s3 import to_csv_on_s3
 
 
 def get_url(datatype, day):
@@ -89,4 +90,27 @@ def clean_dataframe(df, day):
     df['date'] = day.strftime("%Y-%m-%d")
     df.reset_index(drop=True)
     
+    return df
+
+
+def format_data(datatype, day, colnames, FOLDER_RAW, BUCKET_NAME):
+    dict = {1: "ナイト立会取引", 2:"ナイトJNET取引", 3:"日中立会取引", 4:"日中JNET取引"}
+    url = get_url(datatype=datatype, day=day)
+    if url == "No data":
+        # 休日などでファイルがない場合はエラーメッセージを返します
+        text = "%s年%s月%s日の%sが見つかりません"%(day.year, day.month, day.day, dict[datatype])
+        print(text)
+    elif url == "No page":
+        text = "メインページが見つかりません。https://www.jpx.co.jp/markets/derivatives/participant-volume/index.html　を確認してください"
+        print(text)
+    elif requests.get(url).ok:
+        s=requests.get(url).content
+        df = clean_dataframe(get_csv(s, colnames = colnames), day = day)
+        filename = FOLDER_RAW + dict[datatype] + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
+        to_csv_on_s3(df, bucketName=BUCKET_NAME, fileName=filename)
+        text = "%s年%s月%s日の%sをダウンロードしました"%(day.year, day.month, day.day, dict[datatype])
+        print(text)
+    else:
+        text = "何らかの理由でデータが見つかりません"
+        print(text)
     return df
