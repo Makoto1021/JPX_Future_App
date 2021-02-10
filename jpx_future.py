@@ -27,7 +27,7 @@ TOPIX_MULTI = 1.0
 
 def jpx_future():
 
-    days = 0
+    days = 5
     print("days", days)
     print("TOPIX_MULTI", TOPIX_MULTI)
 
@@ -375,6 +375,8 @@ def jpx_future():
     try:
         historical_by_group = pd.read_csv(HISTORICAL_GROUP)
         historical_by_group = pd.concat([historical_by_group, df_by_group], sort=False)
+        historical_by_group = historical_by_group[["date", "group", "buy", "sell", "diff"]]
+        historical_by_group = historical_by_group.sort_values(["group", "date"])
     except:
         historical_by_group = df_by_group
     historical_by_group.to_csv("historical_by_group.csv")
@@ -382,6 +384,8 @@ def jpx_future():
     try:
         historical_by_group_product = pd.read_csv(HISTORICAL_GROU_PRODUCT)
         historical_by_group_product = pd.concat([historical_by_group_product, df_by_group_product], sort=False)
+        historical_by_group_product = historical_by_group_product[["product", "group", "date", "buy", "sell", "diff"]]
+        historical_by_group_product = historical_by_group_product.sort_values(["product", "group", "date"])
     except:
         historical_by_group_product = df_by_group_product
     historical_by_group_product.to_csv("historical_by_group_product.csv")
@@ -397,7 +401,7 @@ def jpx_future():
     to_csv_on_s3(historical_by_group_product, bucketName=BUCKET_NAME, fileName=filename)
 
     filename = FOLDER_FINAL + "df_total_final" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
-    to_csv_on_s3(df_total_final, bucketName=BUCKET_NAME, fileName=filename)
+    to_csv_on_s3(df_total_final, bucketName=BUCKET_NAME, fileName=filename, index=True)
 
     filename = FOLDER_FINAL + "df_wide_total" + str(day.year) +"-"+ str(day.month) +"-"+ str(day.day) + ".csv"
-    to_csv_on_s3(df_wide_total, bucketName=BUCKET_NAME, fileName=filename)
+    to_csv_on_s3(df_wide_total, bucketName=BUCKET_NAME, fileName=filename, index=True)
