@@ -12,8 +12,10 @@ Data is downloaded from JPX official website. https://www.jpx.co.jp/markets/deri
 In terminal, run 
 
 `conda create --name jpx_env python=3.6`
+Or `python3 -m venv jpx_future`
 
 `conda activate jpx_env`
+Or `source jpx_future/bin/activate`
 
 `pip install -r requirements.txt`
 
