@@ -27,7 +27,7 @@ TOPIX_MULTI = 1.0
 
 def jpx_future():
 
-    days = 5
+    days = 2
     print("days", days)
     print("TOPIX_MULTI", TOPIX_MULTI)
 
