@@ -16,7 +16,8 @@ import plotly.graph_objects as go
 import plotly.figure_factory as ff
 import numpy as np
 import boto3
-from to_csv_on_s3 import to_csv_on_s3
+# from to_csv_on_s3 import to_csv_on_s3
+from transform_data import to_csv_on_s3
 
 # initial date
 today = dt.today().replace(microsecond=0, second=0, minute=0, hour=0)
@@ -297,4 +298,9 @@ def update_history_figure_and_table(value1, value2):
     return line_fig, df_prod.to_dict('records'), [{"name": i, "id": i}  for i in df_prod.columns]
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host = '127.0.0.1', port=8080)# 
+    app.run_server(
+        debug=True, 
+        # host = '127.0.0.1', 
+        host = '0.0.0.0',
+        port=8080
+        )

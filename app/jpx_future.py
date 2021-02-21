@@ -12,7 +12,7 @@ from transform_data import *
 import os
 import glob
 import boto3
-from to_csv_on_s3 import to_csv_on_s3
+# from to_csv_on_s3 import to_csv_on_s3
 
 ## 1-2. パラメーターの設定
 # reading s3 bucket

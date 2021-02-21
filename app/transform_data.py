@@ -7,6 +7,8 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from functools import partial, reduce
+from io import StringIO
+import boto3
 
 def fut_or_op(code):
     code = str(code)
@@ -190,3 +192,20 @@ def get_wide(df):
     df_wide = df_wide.reindex(new_cols, axis=1, level=1)
     df_wide.index.names = ["取引参加者"]
     return df_wide
+
+def to_csv_on_s3(dataframe, bucketName, fileName, index=False):
+    """ 
+    Write a dataframe to a CSV on S3
+    Example:
+    filename = "raw_data/test.csv"
+    bucketName = "jpx-future-bucket"
+    """
+    csv_buffer = StringIO()
+    dataframe.to_csv(csv_buffer, index=index)
+    client = boto3.client('s3')
+    response = client.put_object(
+        ACL = 'private',
+        Body = csv_buffer.getvalue(),
+        Bucket=bucketName,
+        Key=fileName
+    )
