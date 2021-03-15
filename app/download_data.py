@@ -7,8 +7,9 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from functools import partial, reduce
-from to_csv_on_s3 import to_csv_on_s3
-
+from io import StringIO
+import boto3
+# from to_csv_on_s3 import to_csv_on_s3
 
 def get_url(datatype, day):
     """
@@ -19,6 +20,10 @@ def get_url(datatype, day):
         4: 日中、JNET取引
     """
     main_page_url = "https://www.jpx.co.jp/markets/derivatives/participant-volume/index.html"
+
+    # use below for the one previous month
+    # main_page_url = "https://www.jpx.co.jp/markets/derivatives/participant-volume/archives-01.html"
+    
     date = str(day.year) + '{:02d}'.format(day.month) + '{:02d}'.format(day.day)
     response = requests.get(main_page_url)
     
@@ -92,6 +97,22 @@ def clean_dataframe(df, day):
     
     return df
 
+def to_csv_on_s3(dataframe, bucketName, fileName, index=False):
+    """ 
+    Write a dataframe to a CSV on S3
+    Example:
+    filename = "raw_data/test.csv"
+    bucketName = "jpx-future-bucket"
+    """
+    csv_buffer = StringIO()
+    dataframe.to_csv(csv_buffer, index=index)
+    client = boto3.client('s3')
+    response = client.put_object(
+        ACL = 'private',
+        Body = csv_buffer.getvalue(),
+        Bucket=bucketName,
+        Key=fileName
+    )
 
 def format_data(datatype, day, colnames, FOLDER_RAW, BUCKET_NAME):
     dict = {1: "ナイト立会取引", 2:"ナイトJNET取引", 3:"日中立会取引", 4:"日中JNET取引"}

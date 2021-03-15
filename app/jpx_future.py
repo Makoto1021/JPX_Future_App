@@ -7,7 +7,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from functools import partial, reduce
-from download_data import get_url, clean_dataframe, get_csv, format_data
+from download_data import get_url, clean_dataframe, get_csv, format_data, to_csv_on_s3
 from transform_data import *
 import os
 import glob
@@ -27,11 +27,12 @@ TOPIX_MULTI = 1.0
 
 def jpx_future():
 
-    days = 2
+    days = 18
     print("days", days)
     print("TOPIX_MULTI", TOPIX_MULTI)
 
     day = dt.today() - timedelta(days=days)
+    print(day)
     colnames = ['institutions_sell_code', 'institutions_sell', 
             'institutions_sell_eng', 'volume_sell', 'institutions_buy_code', 
             'institutions_buy', 'institutions_buy_eng', 'volume_buy']

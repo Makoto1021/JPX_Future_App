@@ -17,7 +17,7 @@ import plotly.figure_factory as ff
 import numpy as np
 import boto3
 # from to_csv_on_s3 import to_csv_on_s3
-from transform_data import to_csv_on_s3
+from download_data import to_csv_on_s3
 
 # initial date
 today = dt.today().replace(microsecond=0, second=0, minute=0, hour=0)
